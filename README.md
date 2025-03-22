@@ -73,7 +73,7 @@ Zeigt die nächsten Abfahrten von Bussen und Trams der **BVG (VBB API v6)** für
 | Kalender (Horizont)      | ![](./example_horizont.png)          |
 | Namensschild (Raum 3)    | ![](./example_raum3.png)             |
 | Zitat (Küche)            | ![](./example_kueche.png)            |
-| WC Damen / Herren        | ![](./example_wc_damen.png) / ![](./example_wc_herren.png) |
+| WC Damen / Herren        | ![](./example_wc_damen.png)         |
 | ÖPNV                    | ![](./example_opnv.png)              |
 
 ---
