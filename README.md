@@ -70,11 +70,11 @@ Zeigt die nächsten Abfahrten von Bussen und Trams der **BVG (VBB API v6)** für
 
 | Typ                     | Vorschau                             |
 |--------------------------|--------------------------------------|
-| Kalender (Horizont)      | ![](./example_horizont.png)          |
-| Namensschild (Raum 3)    | ![](./example_raum3.png)             |
-| Zitat (Küche)            | ![](./example_kueche.png)            |
-| WC Damen / Herren        | ![](./example_wc_damen.png)         |
-| ÖPNV                    | ![](./example_opnv.png)              |
+| Kalender (Horizont)      | ![](./example/example_horizont.png)          |
+| Namensschild (Raum 3)    | ![](./example/example_raum3.png)             |
+| Zitat (Küche)            | ![](./example/example_kueche.png)            |
+| WC Damen / Herren        | ![](./example/example_wc_damen.png)         |
+| ÖPNV                    | ![](./example/example_opnv.png)              |
 
 ---
 
@@ -84,8 +84,7 @@ Jede Variante ist als eigenes PowerShell-Skript realisiert. Beispiel:
 - `OEPL_IZRD.ps1` – Raum Horizont (Kalender)
 - `OEPL_IZRD_Raum3.ps1` – Raum 3 (Namen)
 - `OEPL_IZRD_Kueche.ps1` – Küche (Zitat)
-- `OEPL_IZRD_WC_Damen.ps1` – Damen-WC
-- `OEPL_IZRD_WC_Herren.ps1` – Herren-WC
+- `OEPL_IZRD_WCs.ps1` – Damen-WC
 - `OEPL_IZRD_OePNV.ps1` – ÖPNV-Anzeige
 
 ---
