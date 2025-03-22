@@ -2,7 +2,7 @@
 $tenantId     = "<ms365-tenantId>"
 $clientId     = "<ms365-clientId>"
 $clientSecret = ConvertTo-SecureString "<ms365-clientSecret>" -AsPlainText -Force
-$mailbox      = "raum.horizont@izrd.de"
+$mailbox      = "raum.horizont@kunde.de"
 
 $oeplUrl      = "http://192.168.0.200/api/upload"
 $displayId    = "epd-350-horizont"
