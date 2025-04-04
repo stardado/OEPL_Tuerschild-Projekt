@@ -72,13 +72,13 @@ Zeigt die nächsten Abfahrten von Bussen und Trams der **BVG (VBB API v6)** für
 - Bahnsymbol für Tram, Bus-Icon für Bus
 
 ### 6. **WLAN-Gastzugang (tägliches Passwort)**
-Zeigt täglich ein automatisch generiertes Passwort für das Gäste-WLAN inklusive Klartextanzeige und QR-Code zum einfachen Verbinden. Das Passwort wird aus zwei Wörtern aus einem RSS-Feed, einem Sonderzeichen und einer zweistelligen Zahl zusammengesetzt (z. B. `ApfelTiger!42`).
+Zeigt täglich ein automatisch generiertes Passwort für das Gäste-WLAN inklusive Klartextanzeige und QR-Code zum einfachen Verbinden. Das Passwort wird aus zwei Wörtern aus einem RSS-Feed, einem Sonderzeichen und einer zweistelligen Zahl zusammengesetzt (z. B. `ApfelTiger!42`). Das Passwort wird ebenfalls direkt auf das Ubiqutity Unify System übertragen und als neue Gast-Passwort gesetzt. Somit ist das dann sofort Aktiv. 
 
 **Datenquelle:** Zufällige Wörter aus einem RSS-Feed  
 **Besonderheiten:**
 - QR-Code für WLAN-Verbindung nach Standardformat
 - Klartextanzeige von SSID und Passwort
-- Automatische tägliche Aktualisierung
+- Automatische tägliche Aktualisierung der Schilder
 - Bild wird nur bei Änderung neu an OEPL übertragen
 ---
 
