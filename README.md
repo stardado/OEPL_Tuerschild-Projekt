@@ -15,6 +15,11 @@ Dieses Projekt automatisiert die Erstellung und Anzeige von digitalen Türschild
 - ggf. `MSAL.PS` PowerShell-Modul (`Install-Module MSAL.PS`)
 
 ---
+## Wandhalter
+ 
+Für eine saubere Montage wurde eine eigene [Wandhalterung für OEPL-Displays auf Thingiverse veröffentlicht](https://www.thingiverse.com/thing:7000491) oder siehe hier unter 3d-prints.
+
+---
 
 ## 📦 Varianten
 
@@ -98,11 +103,8 @@ Jede Variante ist als eigenes PowerShell-Skript realisiert. Beispiel:
 - `OEPL_IZRD_WCs.ps1` – Damen-WC
 - `OEPL_IZRD_OePNV.ps1` – ÖPNV-Anzeige
 - `OEPL_IZRD_WLAN.ps1` – WLAN-Anzeige
----
-## Wandhalter
- 
-Für eine saubere Montage wurde eine eigene [Wandhalterung für OEPL-Displays auf Thingiverse veröffentlicht](https://www.thingiverse.com/thing:7000491) oder siehe hier unter 3d-prints.
 
+---
 ## 📤 Upload an OEPL
 
 Alle Skripte senden das fertige Bild per `curl` an den OEPL-Server:
