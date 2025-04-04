@@ -1,11 +1,11 @@
-﻿# === KONFIGURATION ===============================
-$oeplUrl       = "http://10.44.45.246/api/upload"
+# === KONFIGURATION ===============================
+$oeplUrl       = "http://198.51.100.200/imgupload"  # BWY-Upload
 $outDir        = "$PSScriptRoot"
 $fontFamily    = "Segoe UI Emoji"
 
 $displays = @(
-    @{ Name = "Damen WC"; DisplayId = "epd-350-damenwc" },
-    @{ Name = "Herren WC"; DisplayId = "epd-350-herrenwc" }
+    @{ Name = "Damen WC"; Mac = "FFFFFFFFE0001234" },
+    @{ Name = "Herren WC"; Mac = "FFFFFFFF50011234" }
 )
 # =================================================
 
@@ -16,7 +16,7 @@ Add-Type -AssemblyName System.Drawing
 function New-WcSign {
     param (
         [string]$roomName,
-        [string]$displayId,
+        [string]$macAddress,
         [string]$outFile
     )
 
@@ -29,17 +29,21 @@ function New-WcSign {
     $gfx.SmoothingMode = 'AntiAlias'
     $gfx.Clear([System.Drawing.Color]::White)
 
-    # Schriftarten
-    $fontHeader  = New-Object System.Drawing.Font("Arial", 16, [System.Drawing.FontStyle]::Bold)
-    $fontIZRD    = $fontHeader
-    $fontSymbol  = New-Object System.Drawing.Font($fontFamily, 70) # doppelte Größe
-
     # Farben
     $black = [System.Drawing.Brushes]::Black
-    $red   = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255,255,0,0))
+    $yellowColor = [System.Drawing.Color]::FromArgb(255, 255, 204, 0)
+    $yellowBrush = New-Object System.Drawing.SolidBrush $yellowColor
+
+    # Schriftarten
+    $fontHeader  = New-Object System.Drawing.Font("Arial", 18, [System.Drawing.FontStyle]::Bold)
+    $fontIZRD    = $fontHeader
+    $fontSymbol  = New-Object System.Drawing.Font($fontFamily, 70)
+
+    # Hintergrund oben
+    $gfx.FillRectangle($yellowBrush, 0, 0, $width, 35)
 
     # Kopfzeile
-    $gfx.DrawString($roomName, $fontHeader, $red, 10, 5)
+    $gfx.DrawString($roomName, $fontHeader, $black, 10, 5)
     $izrdSize = $gfx.MeasureString("IZRD e.V.", $fontIZRD)
     $gfx.DrawString("IZRD e.V.", $fontIZRD, $black, $width - $izrdSize.Width - 10, 5)
 
@@ -61,8 +65,13 @@ function New-WcSign {
 
     $gfx.DrawString($icons, $fontSymbol, $black, $x, $y)
 
-    # Speichern
-    $bmp.Save($outFile, [System.Drawing.Imaging.ImageFormat]::Png)
+    # Speichern als JPEG in voller Qualität
+    $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
+    $encoder = [System.Drawing.Imaging.Encoder]::Quality
+    $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+    $encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter($encoder, 100L)
+    $bmp.Save($outFile, $jpegCodec, $encoderParams)
+
     $gfx.Dispose()
     $bmp.Dispose()
 
@@ -71,14 +80,18 @@ function New-WcSign {
 
 # === ALLE BILDER ERZEUGEN & SENDEN ===============
 foreach ($display in $displays) {
-    $filePath = Join-Path $outDir "$($display.DisplayId).png"
-    New-WcSign -roomName $display.Name -displayId $display.DisplayId -outFile $filePath
+    $filePath = Join-Path $outDir "$($display.Mac).jpg"
+    New-WcSign -roomName $display.Name -macAddress $display.Mac -outFile $filePath
 
     # Upload
-    Write-Host "📤 Sende Bild an $($display.DisplayId)..." -ForegroundColor Cyan
-    curl.exe -X POST $oeplUrl `
-        -F "file=@$filePath" `
-        -F "id=$($display.DisplayId)" `
-        -H "accept: application/json" | Out-Null
-    Write-Host "✅ Bild an $($display.DisplayId) gesendet." -ForegroundColor Green
+    Write-Host "📤 Sende Bild an $($display.Mac)..." -ForegroundColor Cyan
+    $arguments = @(
+        "-X", "POST", "$oeplUrl",
+        "-F", "mac=$($display.Mac)",
+        "-F", "dither=0",
+        "-F", "image=@$filePath;type=image/jpeg",
+        "-H", "accept: application/json"
+    )
+    Start-Process -FilePath "curl.exe" -ArgumentList $arguments -NoNewWindow -Wait
+    Write-Host "✅ Bild an $($display.Mac) gesendet." -ForegroundColor Green
 }
