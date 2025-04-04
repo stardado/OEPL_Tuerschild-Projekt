@@ -1,15 +1,15 @@
-﻿# === KONFIGURATION ===============================
-$outFile = "$PSScriptRoot\raum3.png"
-$raumName   = "Raum 3"
-$abteilung  = "Verwaltung"
+# === KONFIGURATION ===============================
+$outFile = "$PSScriptRoot\raum1.jpg"
+$raumName   = "Raum 1"
+$abteilung  = "Abteilungsname"
 $names = @(
     "Maxi Muster",
     "Fritz Baumeister",
     "Lisa Lotte"
 )
 
-$oeplUrl   = "http://192.168.0.200/api/upload"
-$displayId = "epd-350-raum3"
+$oeplUrl   = "http://198.51.100.200/imgupload"
+$macAddress = "780105561CBC1234"
 # =================================================
 
 # === BILD INITIALISIEREN =========================
@@ -23,33 +23,37 @@ $gfx.SmoothingMode = "AntiAlias"
 $gfx.Clear([System.Drawing.Color]::White)
 
 # === SCHRIFT & FARBEN ============================
-$fontTitle     = New-Object System.Drawing.Font "Arial", 16, ([System.Drawing.FontStyle]::Bold)
-$fontAbteilung = New-Object System.Drawing.Font "Arial", 15, ([System.Drawing.FontStyle]::Bold)
-$fontName      = New-Object System.Drawing.Font "Arial", 14
+$fontTitle     = New-Object System.Drawing.Font "Arial", 18, ([System.Drawing.FontStyle]::Bold)
+$fontAbteilung = New-Object System.Drawing.Font "Arial", 18, ([System.Drawing.FontStyle]::Bold)
+$fontName      = New-Object System.Drawing.Font "Arial", 16
 $black         = [System.Drawing.Brushes]::Black
-$red           = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255,255,0,0))
+$yellowColor   = [System.Drawing.Color]::FromArgb(255, 255, 204, 0)
+$yellowBrush   = New-Object System.Drawing.SolidBrush $yellowColor
+
+# === GELBER HINTERGRUNDBALKEN ====================
+$gfx.FillRectangle($yellowBrush, 0, 0, $width, 35)
 
 # === KOPFZEILE ===================================
-$gfx.DrawString($raumName, $fontTitle, $red, 3, 5)
+$gfx.DrawString($raumName, $fontTitle, $black, 10, 5)
 $izrdText = "IZRD e.V."
 $size     = $gfx.MeasureString($izrdText, $fontTitle)
-$gfx.DrawString($izrdText, $fontTitle, $black, $width - $size.Width - 3, 5)
+$gfx.DrawString($izrdText, $fontTitle, $black, $width - $size.Width - 10, 5)
 
 # === TRENNLINIE ==================================
 $gfx.DrawLine([System.Drawing.Pens]::Black, 0, 35, $width, 35)
 
 # === ABTEILUNG ===================================
-$gfx.DrawString($abteilung, $fontAbteilung, $red, 3, 40)
+$gfx.DrawString($abteilung, $fontAbteilung, $black, 3, 40)
 
 # === NAMEN =======================================
 $y = 40 + $fontAbteilung.Height + 10  # mehr Abstand nach "Verwaltung"
 foreach ($name in $names) {
     $gfx.DrawString($name, $fontName, $black, 3, $y)
-    $y += $fontName.Height + 1  # sehr enger Abstand
+    $y += $fontName.Height + 1  # enger Abstand
 }
 
 # === BILD SPEICHERN ==============================
-$bmp.Save($outFile, [System.Drawing.Imaging.ImageFormat]::Png)
+$bmp.Save($outFile, [System.Drawing.Imaging.ImageFormat]::Jpeg)
 $gfx.Dispose()
 $bmp.Dispose()
 
@@ -57,9 +61,12 @@ Write-Host "✅ Türschild für '$raumName' gespeichert unter: $outFile" -Foregr
 
 # === BILD AN OEPL SENDEN =========================
 Write-Host "📤 Sende Bild an OEPL..." -ForegroundColor Cyan
-curl.exe -X POST $oeplUrl `
-    -F "file=@$outFile" `
-    -F "id=$displayId" `
-    -H "accept: application/json" | Out-Null
-Write-Host "✅ Bild erfolgreich an $displayId gesendet." -ForegroundColor Green
-
+$arguments = @(
+    "-X", "POST", "$oeplUrl",
+    "-F", "mac=$macAddress",
+    "-F", "dither=0",
+    "-F", "image=@$outFile;type=image/jpeg",
+    "-H", "accept: application/json"
+)
+Start-Process -FilePath "curl.exe" -ArgumentList $arguments -NoNewWindow -Wait
+Write-Host "✅ Bild erfolgreich an $macAddress gesendet." -ForegroundColor Green
