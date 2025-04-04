@@ -17,7 +17,9 @@ Dieses Projekt automatisiert die Erstellung und Anzeige von digitalen Türschild
 ---
 ## Wandhalter
  
-Für eine saubere Montage wurde eine eigene [Wandhalterung für OEPL-Displays auf Thingiverse veröffentlicht](https://www.thingiverse.com/thing:7000491) oder siehe hier unter 3d-prints.
+Für eine saubere Montage wurde eine eigene [Wandhalterung für OEPL-Displays auf Thingiverse veröffentlicht](https://www.thingiverse.com/thing:7000491) oder siehe hier unter 3d-prints. 
+
+Diese Wandhalterung für Hanshow Nebular Epaper Schilder verfügt über zwei 6 mm Bohrlöcher, die für Senkkopfschrauben ausgelegt sind. Dadurch wird eine verdrehsichere Befestigung sichergestellt – das Schild sitzt fest und ohne Spiel oder Wackeln. Gleichzeitig ermöglicht das flache Design auch eine Montage per Kleben an unterschiedlichen Oberflächen, wobei das Schild bei Bedarf problemlos entfernt werden kann.
 
 ---
 
