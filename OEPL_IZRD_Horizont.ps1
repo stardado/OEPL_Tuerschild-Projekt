@@ -4,8 +4,8 @@ $clientId     = "<ms365-clientId>"
 $clientSecret = ConvertTo-SecureString "<ms365-clientSecret>" -AsPlainText -Force
 $mailbox      = "raum.horizont@kunde.de"
 
-$oeplUrl      = "http://192.168.0.200/api/upload"
-$displayId    = "epd-350-horizont"
+$oeplUrl      = "http://198.51.100.200/api/upload"  # BWY-Upload!
+$macAddress   = "FFFFFFFF08019123"
 
 $outFile       = "$PSScriptRoot\raum_horizont.png"
 $signatureFile = "$PSScriptRoot\raum_horizont.lastcontent.txt"
@@ -75,24 +75,33 @@ $gfx = [System.Drawing.Graphics]::FromImage($bmp)
 $gfx.SmoothingMode = "AntiAlias"
 $gfx.Clear([System.Drawing.Color]::White)
 
-# Schriftarten & Farben
-$fontTitle  = New-Object System.Drawing.Font "Arial", 14, ([System.Drawing.FontStyle]::Bold)
-$fontTime   = New-Object System.Drawing.Font "Arial", 14
-$fontText   = New-Object System.Drawing.Font "Arial", 13
-$black      = [System.Drawing.Brushes]::Black
-$red        = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255,255,0,0))
+# Farben
+$black = [System.Drawing.Brushes]::Black
+$yellowColor = [System.Drawing.Color]::FromArgb(255, 255, 204, 0)
+$yellowBrush = New-Object System.Drawing.SolidBrush $yellowColor
 
-# Kopfzeile
-$gfx.DrawString("Raum Horizont", $fontTitle, $red, 10, 5)
+# Fonts
+$fontTitle  = New-Object System.Drawing.Font "Arial", 18, ([System.Drawing.FontStyle]::Bold)
+$fontTime   = New-Object System.Drawing.Font "Arial", 18
+$fontText   = New-Object System.Drawing.Font "Arial", 16
+
+# Gelbes Rechteck oben
+$gfx.FillRectangle($yellowBrush, 0, 0, $width, 35)
+
+# Schwarzer Text (Raum & IZRD)
+$gfx.DrawString("Raum Horizont", $fontTitle, $black, 10, 5)
 $izrdText = "IZRD e.V."
 $size = $gfx.MeasureString($izrdText, $fontTitle)
 $gfx.DrawString($izrdText, $fontTitle, $black, $width - $size.Width - 10, 5)
+
+# Linie
 $gfx.DrawLine([System.Drawing.Pens]::Black, 0, 35, $width, 35)
 
 # Termine zeichnen
 $y = 40
 if ($events.Count -eq 0) {
     $gfx.DrawString("Heute keine Termine.", $fontText, $black, 10, $y)
+  #  $gfx.DrawString("Der Raum ist Frei.", $fontText, $black, 10, $y +25)
 } else {
     foreach ($evt in $events) {
         $startDT = [datetime]::Parse($evt.start.dateTime).ToLocalTime()
@@ -106,23 +115,24 @@ if ($events.Count -eq 0) {
 
         # Zeit
         $gfx.DrawString("$startTime - $endTime"+":", $fontTime, $black, 10, $y)
-        $y += 17
+        $y += 30
 
         # Textblock mehrzeilig zeichnen
-        $rectX = 10
-        $rectW = [float]($width - 20)
-        $rect = New-Object System.Drawing.RectangleF($rectX, $y, $rectW, 999)
-        $sf   = New-Object System.Drawing.StringFormat
+        $rect = New-Object System.Drawing.RectangleF([float]10, [float]$y, [float]($width - 20), [float]999)
+        $sf = New-Object System.Drawing.StringFormat
+        $sf.Alignment = "Near"
+        $sf.LineAlignment = "Near"
+        $sf.Trimming = "Word"
         $gfx.DrawString($subject, $fontText, $black, $rect, $sf)
 
-        $textSize = $gfx.MeasureString($subject, $fontText, $width - 20)
+        $textSize = $gfx.MeasureString($subject, $fontText, [int]($width - 20))
         $totalHeight = [Math]::Ceiling($textSize.Height)
-        $y += $totalHeight + 4
+        $y += $totalHeight + 6
 
         # Aktuellen Termin hervorheben
         if ($now -ge $startDT -and $now -lt $endDT) {
-            $borderPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::Red)
-            $gfx.DrawRectangle($borderPen, $rectX - 2, $blockY - 2, $rectW + 2, $y - $blockY + 2)
+            $borderPen = New-Object System.Drawing.Pen $yellowColor, 2
+            $gfx.DrawRectangle($borderPen, 8, $blockY - 2, $width - 16, $y - $blockY + 2)
             $borderPen.Dispose()
         }
     }
@@ -133,18 +143,31 @@ if ($events.Count -eq 0) {
 }
 
 # === BILD SPEICHERN ==============================
-$bmp.Save($outFile, [System.Drawing.Imaging.ImageFormat]::Png)
+$encoder = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
+$encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+$encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter (
+    [System.Drawing.Imaging.Encoder]::Quality, [long]100
+)
+$bmp.Save($outFile, $encoder, $encoderParams)
+
 $gfx.Dispose()
 $bmp.Dispose()
 Write-Host "✅ Bild gespeichert unter: $outFile" -ForegroundColor Green
 
-# === BILD AN OEPL SENDEN =========================
-Write-Host "📤 Sende Bild an OEPL..." -ForegroundColor Cyan
-curl.exe -X POST $oeplUrl `
-    -F "file=@$outFile" `
-    -F "id=$displayId" `
-    -H "accept: application/json" | Out-Null
-Write-Host "✅ Bild erfolgreich an $displayId gesendet." -ForegroundColor Green
 
-# === SIGNATUR AKTUALISIEREN ======================
+# === BILD AN OEPL SENDEN =========================
+$arguments = @(
+    "-X", "POST", "$oeplUrl",
+    "-F", "mac=$macAddress",
+    "-F", "dither=0",
+    "-F", "image=@$outFile;type=image/jpeg",
+    "-H", "accept: application/json"
+)
+
+Write-Host "📤 Sende Bild an OEPL..." -ForegroundColor Cyan
+Start-Process -FilePath "curl.exe" -ArgumentList $arguments -NoNewWindow -Wait
+Write-Host "✅ Upload-Versuch abgeschlossen." -ForegroundColor Green
+
+
+# === SIGNATUR SPEICHERN ==========================
 $currentHash | Out-File -FilePath $signatureFile -Encoding ASCII
