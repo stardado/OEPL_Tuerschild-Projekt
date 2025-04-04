@@ -64,6 +64,15 @@ Zeigt die nächsten Abfahrten von Bussen und Trams der **BVG (VBB API v6)** für
 - Anzeige mehrerer Abfahrtszeiten
 - Bahnsymbol für Tram, Bus-Icon für Bus
 
+### 6. **WLAN-Gastzugang (tägliches Passwort)**
+Zeigt täglich ein automatisch generiertes Passwort für das Gäste-WLAN inklusive Klartextanzeige und QR-Code zum einfachen Verbinden. Das Passwort wird aus zwei Wörtern aus einem RSS-Feed, einem Sonderzeichen und einer zweistelligen Zahl zusammengesetzt (z. B. `ApfelTiger!42`).
+
+**Datenquelle:** Zufällige Wörter aus einem RSS-Feed  
+**Besonderheiten:**
+- QR-Code für WLAN-Verbindung nach Standardformat
+- Klartextanzeige von SSID und Passwort
+- Automatische tägliche Aktualisierung
+- Bild wird nur bei Änderung neu an OEPL übertragen
 ---
 
 ## 🖼 Beispielbilder
@@ -75,6 +84,8 @@ Zeigt die nächsten Abfahrten von Bussen und Trams der **BVG (VBB API v6)** für
 | Zitat (Küche)            | ![](./example/example_kueche.png)            |
 | WC Damen / Herren        | ![](./example/example_wc_damen.png)         |
 | ÖPNV                    | ![](./example/example_opnv.png)              |
+| Gast WLAN               | ![](./example/example_wlan.jpg)              |
+| Gast WLAN QR-Only       | ![](./example/example_wlan_152x200.jpg)              |
 
 ---
 
@@ -86,7 +97,7 @@ Jede Variante ist als eigenes PowerShell-Skript realisiert. Beispiel:
 - `OEPL_IZRD_Kueche.ps1` – Küche (Zitat)
 - `OEPL_IZRD_WCs.ps1` – Damen-WC
 - `OEPL_IZRD_OePNV.ps1` – ÖPNV-Anzeige
-
+- `OEPL_IZRD_WLAN.ps1` – WLAN-Anzeige
 ---
 
 ## 📤 Upload an OEPL
@@ -94,7 +105,11 @@ Jede Variante ist als eigenes PowerShell-Skript realisiert. Beispiel:
 Alle Skripte senden das fertige Bild per `curl` an den OEPL-Server:
 
 ```bash
-curl.exe -X POST http://<OEPL-IP>/api/upload `
-  -F "file=@<bilddatei>" `
-  -F "id=<display_id>" `
-  -H "accept: application/json"
+    $args = @(
+        "-X", "POST", "$oeplUrl",
+        "-F", "mac=$($entry.Mac)",
+        "-F", "dither=0",
+        "-F", "image=@$($entry.File);type=image/jpeg",
+        "-H", "accept: application/json"
+    )
+    Start-Process -FilePath "curl.exe" -ArgumentList $args -NoNewWindow -Wait
