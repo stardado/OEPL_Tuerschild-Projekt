@@ -79,11 +79,11 @@ Zeigt täglich ein automatisch generiertes Passwort für das Gäste-WLAN inklusi
 
 | Typ                     | Vorschau                             |
 |--------------------------|--------------------------------------|
-| Kalender (Horizont)      | ![](./example/example_horizont.png)          |
-| Namensschild (Raum 3)    | ![](./example/example_raum3.png)             |
-| Zitat (Küche)            | ![](./example/example_kueche.png)            |
-| WC Damen / Herren        | ![](./example/example_wc_damen.png)         |
-| ÖPNV                    | ![](./example/example_opnv.png)              |
+| Kalender (Horizont)      | ![](./example/example_raum_horizont.jpg)          |
+| Namensschild (Raum 3)    | ![](./example/example_raum3.jpg)             |
+| Zitat (Küche)            | ![](./example/example_kueche.jpg)            |
+| WC Damen / Herren        | ![](./example/example_wc_damen.jpg)         |
+| ÖPNV                    | ![](./example/example_opnv.jpg)              |
 | Gast WLAN               | ![](./example/example_wlan.jpg)              |
 | Gast WLAN QR-Only       | ![](./example/example_wlan_152x200.jpg)              |
 
