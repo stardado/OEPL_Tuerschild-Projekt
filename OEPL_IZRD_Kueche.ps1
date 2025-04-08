@@ -6,16 +6,20 @@ $signatureFile = "$PSScriptRoot\kueche.lastcontent.txt"
 $apiKey        = "<DeepL API-Key>"  # DeepL API-Key
 $keyword       = "happiness"
 # =================================================
+# === TLS für HTTPS aktivieren =====================
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # === SYSTEM.DRAWING INITIALISIEREN ==================
 Add-Type -AssemblyName System.Drawing
 
 # === ZITAT ABRUFEN VON ZENQUOTES ====================
-$quoteData = @()
 do {
     try {
         $apiUrl = "https://zenquotes.io/api/quotes/keyword=$keyword"
         $quoteData = Invoke-RestMethod -Uri $apiUrl
+        $randomIndex = Get-Random -Minimum 0 -Maximum $quoteData.Length
+        $quoteText = $quoteData[$randomIndex].q
+        $quoteAuthor = $quoteData[$randomIndex].a
     } catch {
         Write-Host "❌ Fehler beim Abrufen von ZenQuotes – Fallback-Zitat wird verwendet." -ForegroundColor Yellow
         $quoteText = "Be yourself; everyone else is already taken."
@@ -23,21 +27,10 @@ do {
         break
     }
 
-    $randomIndex = Get-Random -Minimum 0 -Maximum $quoteData.Length
-    $quoteText = $quoteData[$randomIndex].q
-    $quoteAuthor = $quoteData[$randomIndex].a
-
-    # === Übersetzung mit DeepL (UTF-8 sicher) ============
+    # === Übersetzung mit DeepL ========================
     try {
-        $deeplRequestBody = @{
-            auth_key    = $apiKey
-            text        = $quoteText
-            target_lang = "DE"
-        }
-        $deeplResponse = Invoke-WebRequest -Method Post `
-            -Uri "https://api-free.deepl.com/v2/translate" `
-            -ContentType "application/x-www-form-urlencoded; charset=utf-8" `
-            -Body $deeplRequestBody
+        $deeplRequestBody = @{ auth_key = $apiKey; text = $quoteText; target_lang = "DE" }
+        $deeplResponse = Invoke-WebRequest -Method Post -Uri "https://api-free.deepl.com/v2/translate" -ContentType "application/x-www-form-urlencoded; charset=utf-8" -Body $deeplRequestBody
         $responseStream = [System.IO.StreamReader]::new($deeplResponse.RawContentStream, [System.Text.Encoding]::UTF8)
         $deeplJson = $responseStream.ReadToEnd() | ConvertFrom-Json
         $translatedText = $deeplJson.translations[0].text
@@ -47,33 +40,20 @@ do {
         $translatedText = $quoteText
     }
 
-    # Prüfe, ob das Zitat zu lang ist
-    $testBmp = New-Object System.Drawing.Bitmap 384, 184
-    $testGfx = [System.Drawing.Graphics]::FromImage($testBmp)
-    $testFont = New-Object System.Drawing.Font("Segoe UI", 11, ([System.Drawing.FontStyle]::Bold -bor [System.Drawing.FontStyle]::Italic))
-    $rect = New-Object System.Drawing.RectangleF(10, 70, 364, 75)
-    $sf = New-Object System.Drawing.StringFormat
-    $sf.Alignment = "Center"
-    $sf.LineAlignment = "Center"
-    $sf.Trimming = "Word"
-    $sf.FormatFlags = [System.Drawing.StringFormatFlags]::LineLimit
-
+    # Prüfe, ob das Zitat maximal 3 Zeilen à 42 Zeichen hat
+    $plain = $translatedText -replace '\s+', ''
     $quoted = "„"$translatedText"“"
-    $measured = $testGfx.MeasureString($quoted, $testFont, [System.Drawing.SizeF]::new(364, 75), $sf)
-    $textHeight = [Math]::Ceiling($measured.Height)
+    $lineCount = [Math]::Ceiling($quoted.Length / 42.0)
 
-    $testGfx.Dispose()
-    $testBmp.Dispose()
+} while ($lineCount -gt 3)
 
-} while ($textHeight -gt 75)
-
-# === Signatur berechnen (MD5) =====================
+# === SIGNATUR BERECHNEN =============================
 $plainText = ($translatedText + $quoteAuthor).Trim() -replace '\s+', ''
 $md5 = [System.Security.Cryptography.MD5]::Create()
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($plainText)
 $hash = ([System.BitConverter]::ToString($md5.ComputeHash($bytes)) -replace "-", "").ToLower()
 
-# === Vorherige Signatur prüfen ====================
+# === VORHERIGE SIGNATUR PRÜFEN ======================
 $lastHash = ""
 if (Test-Path $signatureFile) {
     $lastHash = (Get-Content $signatureFile -Raw).Trim()
@@ -83,7 +63,7 @@ if ($hash -eq $lastHash) {
     return
 }
 
-# === BILD ERZEUGEN ==========================
+# === BILD ERZEUGEN ==================================
 [int]$width = 384
 [int]$height = 184
 $bmp = New-Object System.Drawing.Bitmap $width, $height
@@ -92,7 +72,7 @@ $gfx.SmoothingMode = "AntiAlias"
 $gfx.TextRenderingHint = "AntiAlias"
 $gfx.Clear([System.Drawing.Color]::White)
 
-# === SCHRIFTARTEN UND FARBEN ======================
+# === SCHRIFT & FARBEN ===============================
 $fontHeader     = New-Object System.Drawing.Font("Arial", 18, [System.Drawing.FontStyle]::Bold)
 $fontSubHeader  = New-Object System.Drawing.Font("Segoe UI", 13, [System.Drawing.FontStyle]::Bold)
 $fontQuoteStyle = New-Object System.Drawing.Font("Segoe UI", 13, ([System.Drawing.FontStyle]::Bold -bor [System.Drawing.FontStyle]::Italic))
@@ -122,12 +102,12 @@ $sfCenter.FormatFlags = [System.Drawing.StringFormatFlags]::LineLimit
 $quotedText = "„"$translatedText"“"
 $gfx.DrawString($quotedText, $fontQuoteStyle, $black, $rectQuote, $sfCenter)
 
-# === Autor zentriert darunter =====================
+# === AUTOR =========================================
 $authorText = "$quoteAuthor"
 $authorSize = $gfx.MeasureString($authorText, $fontAuthor)
 $gfx.DrawString($authorText, $fontAuthor, $black, ($width - $authorSize.Width) / 2, $quoteY + $quoteHeight)
 
-# === Bild SPEICHERN ================================
+# === BILD SPEICHERN ================================
 $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
 $encoder = [System.Drawing.Imaging.Encoder]::Quality
 $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
@@ -137,7 +117,7 @@ $gfx.Dispose()
 $bmp.Dispose()
 Write-Host "✅ Bild gespeichert: $outFile" -ForegroundColor Green
 
-# === UPLOAD AN OEPL (über /imgupload) ============
+# === UPLOAD AN OEPL ================================
 Write-Host "📤 Lade Bild an Display hoch..." -ForegroundColor Cyan
 $arguments = @(
     "-X", "POST", "$oeplUrl",
@@ -146,7 +126,7 @@ $arguments = @(
     "-F", "image=@$outFile;type=image/jpeg",
     "-H", "accept: application/json"
 )
-Start-Process -FilePath "curl.exe" -ArgumentList $arguments -NoNewWindow -Wait
+#Start-Process -FilePath "curl.exe" -ArgumentList $arguments -NoNewWindow -Wait
 Write-Host "✅ Bild an Display übertragen." -ForegroundColor Green
 
 # === SIGNATUR SPEICHERN ============================
